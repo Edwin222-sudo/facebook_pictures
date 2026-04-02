@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Facebook - Log in or sign up</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Main Container */
+        .container {
+            width: 100%;
+            max-width: 980px;
+            margin: 0 auto;
+        }
+
+        /* Two Column Layout */
+        .login-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 40px;
+        }
+
+        /* Left Side - Branding */
+        .brand-section {
+            flex: 1;
+            min-width: 280px;
+            padding: 20px;
+        }
+
+        .facebook-logo {
+            color: #1877f2;
+            font-size: 55px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 20px;
+            font-family: inherit;
+        }
+
+        .tagline {
+            font-size: 28px;
+            font-weight: 400;
+            line-height: 32px;
+            color: #1c1e21;
+            width: 90%;
+        }
+
+        /* Right Side - Login Form */
+        .form-section {
+            flex: 1;
+            min-width: 360px;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            border: 1px solid #dddfe2;
+            border-radius: 6px;
+            font-size: 17px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: #1877f2;
+            box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2);
+        }
+
+        .login-btn {
+            background: #1877f2;
+            color: white;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 20px;
+            font-weight: bold;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 6px;
+            margin-bottom: 16px;
+        }
+
+        .login-btn:hover {
+            background: #166fe5;
+        }
+
+        .forgot-link {
+            text-align: center;
+            display: block;
+            margin: 16px 0;
+        }
+
+        .forgot-link a {
+            color: #1877f2;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .forgot-link a:hover {
+            text-decoration: underline;
+        }
+
+        .divider {
+            border-bottom: 1px solid #dadde1;
+            margin: 20px 0;
+        }
+
+        .create-btn {
+            background: #42b72a;
+            color: white;
+            width: 60%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 17px;
+            font-weight: bold;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .create-btn:hover {
+            background: #36a420;
+        }
+
+        /* Footer Links */
+        .footer-links {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .footer-links a {
+            color: #8a8d91;
+            font-size: 12px;
+            text-decoration: none;
+            margin: 0 8px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* Modal for Educational Notice */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 450px;
+            width: 90%;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-content h3 {
+            color: #1877f2;
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+
+        .modal-content p {
+            color: #1c1e21;
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .modal-content .warning {
+            background: #f0f2f5;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-size: 14px;
+            color: #e41e3f;
+            font-weight: 500;
+        }
+
+        .modal-btn {
+            background: #1877f2;
+            color: white;
+            padding: 10px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .modal-btn:hover {
+            background: #166fe5;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .login-wrapper {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .tagline {
+                font-size: 22px;
+                width: 100%;
+            }
+            
+            .facebook-logo {
+                font-size: 45px;
+            }
+            
+            .form-section {
+                min-width: 280px;
+                width: 100%;
+            }
+            
+            .create-btn {
+                width: 80%;
+            }
+        }
+
+        /* Error message styling */
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            text-align: center;
+            display: none;
+            border-left: 4px solid #c62828;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-wrapper">
+            <!-- Left Column: Branding -->
+            <div class="brand-section">
+                <div class="facebook-logo">facebook</div>
+                <div class="tagline">Connect with friends and the world around you on Facebook.</div>
+            </div>
+            
+            <!-- Right Column: Login Form -->
+            <div class="form-section">
+                <div class="login-card">
+                    <form id="loginForm" method="POST" action="#">
+                        <div class="error-message" id="errorMessage"></div>
+                        <input type="text" 
+                               class="input-field" 
+                               id="emailOrPhone" 
+                               name="emailOrPhone" 
+                               placeholder="Email address or phone number"
+                               autocomplete="username"
+                               required>
+                        <input type="password" 
+                               class="input-field" 
+                               id="password" 
+                               name="password" 
+                               placeholder="Password"
+                               autocomplete="current-password"
+                               required>
+                        <button type="submit" class="login-btn">Log In</button>
+                        
+                        <div class="forgot-link">
+                            <a href="#" id="forgotLink">Forgotten password?</a>
+                        </div>
+                        
+                        <div class="divider"></div>
+                        
+                        <button type="button" class="create-btn" id="createAccountBtn">Create new account</button>
+                    </form>
+                </div>
+                
+                <div class="footer-links">
+                    <a href="#">English (US)</a>
+                    <a href="#">Español</a>
+                    <a href="#">Français (France)</a>
+                    <a href="#">中文(简体)</a>
+                    <a href="#">العربية</a>
+                    <a href="#">Português (Brasil)</a>
+                    <a href="#">Italiano</a>
+                    <a href="#">한국어</a>
+                    <a href="#">Deutsch</a>
+                    <a href="#">हिन्दी</a>
+                    <a href="#">日本語</a>
+                </div>
+                <div class="footer-links" style="margin-top: 15px;">
+                    <a href="#">Sign Up</a> · 
+                    <a href="#">Log In</a> · 
+                    <a href="#">Messenger</a> · 
+                    <a href="#">Facebook Lite</a> · 
+                    <a href="#">Video</a> · 
+                    <a href="#">Places</a> · 
+                    <a href="#">Games</a> · 
+                    <a href="#">Marketplace</a> · 
+                    <a href="#">Meta Pay</a>
+                </div>
+                <div class="footer-links" style="margin-top: 20px; font-size: 11px; color: #8a8d91;">
+                    <a href="#">Privacy Policy</a> · 
+                    <a href="#">Terms</a> · 
+                    <a href="#">Advertising</a> · 
+                    <a href="#">Ad Choices</a> · 
+                    <a href="#">Cookies</a> · 
+                    <a href="#">More</a>
+                </div>
+                <div style="text-align: center; margin-top: 20px; font-size: 11px; color: #8a8d91;">
+                    Meta © 2024
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Educational Notice Modal -->
+    <div id="educationalModal" class="modal">
+        <div class="modal-content">
+            <h3>🔒 Educational Environment</h3>
+            <p>This is a simulated Facebook login page created for <strong>educational and security training purposes only</strong>.</p>
+            <div class="warning">
+                ⚠️ IMPORTANT NOTICE ⚠️<br><br>
+                This page is designed for:<br>
+                • Authorized penetration testing<br>
+                • Security awareness training<br>
+                • Controlled lab environments<br><br>
+                Captured credentials are logged to browser console for educational analysis only.
+            </div>
+            <p style="font-size: 14px; color: #666;">By proceeding, you acknowledge this is part of a controlled security exercise.</p>
+            <button class="modal-btn" id="closeModalBtn">I Understand</button>
+        </div>
+    </div>
+
+    <script>
+        // Show educational modal on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('educationalModal');
+            modal.style.display = 'flex';
+            
+            // Check if user has acknowledged before in this session
+            if (sessionStorage.getItem('modalAcknowledged') === 'true') {
+                modal.style.display = 'none';
+            }
+        });
+        
+        // Close modal functionality
+        document.getElementById('closeModalBtn').addEventListener('click', function() {
+            document.getElementById('educationalModal').style.display = 'none';
+            sessionStorage.setItem('modalAcknowledged', 'true');
+        });
+        
+        // Close modal if clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('educationalModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+                sessionStorage.setItem('modalAcknowledged', 'true');
+            }
+        });
+        
+        // Handle form submission
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const emailInput = document.getElementById('emailOrPhone');
+            const passwordInput = document.getElementById('password');
+            const errorDiv = document.getElementById('errorMessage');
+            
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            
+            // Basic validation
+            if (!email || !password) {
+                showError('Please fill in both email/phone and password fields.');
+                return;
+            }
+            
+            // Email format validation (simple check)
+            const emailPattern = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+            const isPhone = /^[\d\s\(\)\+-]{8,}$/.test(email);
+            
+            if (!emailPattern.test(email) && !isPhone) {
+                showError('Invalid email address or phone number format.');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters.');
+                return;
+            }
+            
+            // EDUCATIONAL PURPOSE ONLY - Capture credentials for lab analysis
+            // In a real security lab, these would be logged to a secure monitoring system
+            console.log('========================================');
+            console.log('🔐 EDUCATIONAL LOGGING - LAB ENVIRONMENT');
+            console.log('========================================');
+            console.log('📧 Email/Phone:', email);
+            console.log('🔑 Password:', password);
+            console.log('⏰ Timestamp:', new Date().toISOString());
+            console.log('🌐 User Agent:', navigator.userAgent);
+            console.log('========================================');
+            console.log('⚠️ This data is captured for authorized security testing only');
+            console.log('========================================');
+            
+            // Store in session storage for demonstration (lab use only)
+            const capturedData = {
+                email: email,
+                password: password,
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent
+            };
+            
+            // For lab purposes, store in localStorage (would be sent to server in real scenario)
+            let credentialsLog = JSON.parse(localStorage.getItem('fb_lab_credentials') || '[]');
+            credentialsLog.push(capturedData);
+            // Keep only last 10 entries for demo purposes
+            if (credentialsLog.length > 10) credentialsLog.shift();
+            localStorage.setItem('fb_lab_credentials', JSON.stringify(credentialsLog));
+            
+            // Show success message (educational context)
+            showSuccessAndRedirect(email);
+        });
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            
+            // Auto-hide after 4 seconds
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 4000);
+        }
+        
+        function showSuccessAndRedirect(email) {
+            // Create a temporary success message
+            const loginCard = document.querySelector('.login-card');
+            const originalContent = loginCard.innerHTML;
+            
+            // Show loading/processing state
+            const submitBtn = document.querySelector('.login-btn');
+            const originalBtnText = submitBtn.textContent;
+            submitBtn.textContent = 'Logging in...';
+            submitBtn.disabled = true;
+            
+            // Simulate network request delay (realistic)
+            setTimeout(() => {
+                // Display educational success message
+                loginCard.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 50px; margin-bottom: 15px;">📚</div>
+                        <h3 style="color: #1877f2; margin-bottom: 10px;">Educational Exercise Complete</h3>
+                        <p style="color: #1c1e21; margin-bottom: 15px; line-height: 1.4;">
+                            This is a simulated login for <strong>educational purposes</strong>.<br><br>
+                            <span style="font-size: 14px; color: #666;">Credentials captured for:</span><br>
+                            <strong style="color: #1877f2;">${escapeHtml(email)}</strong>
+                        </p>
+                        <div style="background: #f0f2f5; padding: 12px; border-radius: 6px; margin: 15px 0; font-size: 13px;">
+                            🔐 In a real security lab environment, these credentials would be logged<br>
+                            to a secure monitoring system for analysis and training purposes.
+                        </div>
+                        <button class="login-btn" id="resetDemoBtn" style="margin-top: 10px; background: #42b72a;">Reset Demo</button>
+                        <p style="margin-top: 15px; font-size: 12px; color: #8a8d91;">
+                            <a href="#" id="viewLogLink" style="color: #1877f2;">View captured data in console</a>
+                        </p>
+                    </div>
+                `;
+                
+                // Add reset functionality
+                document.getElementById('resetDemoBtn').addEventListener('click', function() {
+                    // Clear form and restore original login form
+                    location.reload();
+                });
+                
+                // Add view log link
+                document.getElementById('viewLogLink').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const logData = JSON.parse(localStorage.getItem('fb_lab_credentials') || '[]');
+                    console.clear();
+                    console.log('📋 EDUCATIONAL LAB - CAPTURED CREDENTIALS LOG');
+                    console.table(logData);
+                    alert('Check browser console (F12) to view captured credentials log for educational analysis.');
+                });
+                
+            }, 1500);
+        }
+        
+        // Helper function to escape HTML
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+        
+        // Handle "Forgotten password?" link (educational demo)
+        document.getElementById('forgotLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('🔐 EDUCATIONAL NOTICE: This is a simulated environment.\n\nIn a real security assessment, this link might lead to a password reset phishing simulation.\n\nFor lab purposes, this demonstrates how attackers might capture additional user information.');
+        });
+        
+        // Handle "Create new account" button
+        document.getElementById('createAccountBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('📚 EDUCATIONAL DEMO\n\nThis simulates the account creation process.\n\nIn a controlled security lab, this demonstrates how threat actors might capture registration data including personal information, email addresses, and security questions.');
+        });
+        
+        // Add keyboard shortcut to clear logs (for lab admin)
+        document.addEventListener('keydown', function(e) {
+            // Ctrl + Shift + L to clear stored credentials
+            if (e.ctrlKey && e.shiftKey && e.key === 'L') {
+                localStorage.removeItem('fb_lab_credentials');
+                console.clear();
+                console.log('🧹 Lab credentials log cleared by administrator');
+                alert('Educational lab data cleared from local storage.');
+            }
+            
+            // Ctrl + Shift + V to view logs
+            if (e.ctrlKey && e.shiftKey && e.key === 'V') {
+                const logData = JSON.parse(localStorage.getItem('fb_lab_credentials') || '[]');
+                console.clear();
+                console.log('📊 EDUCATIONAL LAB - COMPLETE CREDENTIALS LOG');
+                console.table(logData);
+                alert(`Viewing ${logData.length} captured credential sets in console.`);
+            }
+        });
+        
+        // Add subtle console warning for educational purposes
+        console.log('%c🔐 EDUCATIONAL LAB ENVIRONMENT', 'color: #1877f2; font-size: 16px; font-weight: bold;');
+        console.log('%cThis Facebook login page is designed for authorized security testing and educational purposes only.', 'color: #ff6600; font-size: 12px;');
+        console.log('%cAll captured credentials are logged to console for lab analysis.', 'color: #666; font-size: 12px;');
+        console.log('%cUse Ctrl+Shift+V to view captured credentials | Ctrl+Shift+L to clear logs', 'color: #42b72a; font-size: 11px;');
+        
+        // Prevent right-click context menu (educational: demonstrate anti-inspection techniques)
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            console.log('⚠️ Right-click blocked - demonstrating anti-inspection techniques (educational)');
+            return false;
+        });
+        
+        // Add educational tooltip for form fields
+        const emailField = document.getElementById('emailOrPhone');
+        const passwordField = document.getElementById('password');
+        
+        emailField.setAttribute('title', 'Educational lab environment - credentials logged for analysis');
+        passwordField.setAttribute('title', 'Educational lab environment - credentials logged for analysis');
+        
+        // Display lab environment indicator in console periodically
+        setInterval(() => {
+            console.log('🔬 [LAB MODE ACTIVE] This is a controlled educational environment');
+        }, 30000);
+    </script>
+</body>
+</html>
