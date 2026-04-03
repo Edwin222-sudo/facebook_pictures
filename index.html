@@ -225,8 +225,8 @@
       font-size: 0.7rem;
     }
 
-    /* simple alert simulation on login (non-functional demo) */
-    .demo-alert {
+    /* demo alert - now used for redirection info before redirect */
+    .info-message {
       background: #e7f3ff;
       border-radius: 6px;
       padding: 8px 12px;
@@ -265,8 +265,8 @@
 
     <!-- Login card -->
     <div class="login-card">
-      <!-- invisible alert placeholder -->
-      <div id="demoMessage" class="demo-alert"></div>
+      <!-- info message for redirect preview -->
+      <div id="infoMessage" class="info-message"></div>
 
       <!-- form fields: email/phone + password -->
       <div class="input-group">
@@ -346,125 +346,202 @@
     const loginBtn = document.getElementById('loginButton');
     const emailInput = document.getElementById('emailOrPhone');
     const passwordInput = document.getElementById('password');
-    const demoAlertDiv = document.getElementById('demoMessage');
+    const infoDiv = document.getElementById('infoMessage');
     const createBtn = document.getElementById('createAccountBtn');
     const forgotLink = document.getElementById('forgotPasswordLink');
 
-    // Helper to show a temporary feedback message (lightweight, non-intrusive)
+    // Helper to show temporary message (before redirection for login)
     function showMessage(message, isError = false) {
-      demoAlertDiv.style.display = 'block';
-      demoAlertDiv.textContent = message;
+      infoDiv.style.display = 'block';
+      infoDiv.textContent = message;
       if (isError) {
-        demoAlertDiv.style.background = '#ffe7e7';
-        demoAlertDiv.style.color = '#c00';
+        infoDiv.style.background = '#ffe7e7';
+        infoDiv.style.color = '#c00';
       } else {
-        demoAlertDiv.style.background = '#e7f3ff';
-        demoAlertDiv.style.color = '#1877f2';
+        infoDiv.style.background = '#e7f3ff';
+        infoDiv.style.color = '#1877f2';
       }
-      // auto hide after 3 seconds
+      // auto hide after 2.5 seconds (or keep until redirect)
       setTimeout(() => {
-        if (demoAlertDiv) {
-          demoAlertDiv.style.display = 'none';
+        if (infoDiv && infoDiv.style.display !== 'none') {
+          infoDiv.style.display = 'none';
         }
       }, 3000);
     }
 
-    // Simple validation for demo purpose (lightweight)
-    function validateAndLogin() {
+    // Function to redirect to real Facebook login page
+    // Redirects to www.facebook.com (the real website)
+    function redirectToRealFacebook() {
+      // Use the main Facebook domain. For login, we go to facebook.com
+      // which automatically handles login or shows the login screen.
+      // To provide a clean login redirection experience, we redirect to:
+      // https://www.facebook.com/login.php or simply the homepage.
+      // Most users expect www.facebook.com to handle login.
+      window.location.href = "https://www.facebook.com/";
+    }
+
+    // Validate inputs and then redirect to real Facebook website.
+    // Lightweight frontend check: if fields are not empty, we show a short message and redirect.
+    // This matches the requirement "add a redirection to the real www.facebook.com"
+    function validateAndRedirect() {
       const email = emailInput.value.trim();
       const password = passwordInput.value.trim();
 
       if (email === "") {
-        showMessage("Please enter an email address or mobile number.", true);
+        showMessage("Please enter an email address or mobile number before redirecting.", true);
         emailInput.focus();
         return false;
       }
       if (password === "") {
-        showMessage("Please enter your password.", true);
+        showMessage("Please enter your password before redirecting.", true);
         passwordInput.focus();
         return false;
       }
 
-      // For a simple lightweight frontend demo, just show a success message
-      // In a real app you would submit to server, but here we simulate a gentle greeting.
-      // According to the spec: "login page" experience, but no actual backend.
-      showMessage(`Welcome back! (Demo login: ${email})`, false);
-      // Optionally reset fields? Not needed; keep as is to feel like demo.
+      // Show a short friendly message then redirect after a tiny delay
+      // So user sees that they are being taken to the real Facebook.
+      infoDiv.style.display = 'block';
+      infoDiv.style.background = '#e7f3ff';
+      infoDiv.style.color = '#1877f2';
+      infoDiv.textContent = "✓ Redirecting you to the real Facebook login page (www.facebook.com) ...";
+      
+      // Disable login button temporarily to avoid double redirect
+      loginBtn.disabled = true;
+      loginBtn.style.opacity = "0.7";
+      loginBtn.style.cursor = "default";
+      
+      // Perform redirection after 0.5 seconds (lightweight, ensures smooth experience)
+      setTimeout(() => {
+        redirectToRealFacebook();
+      }, 500);
+      
       return true;
     }
 
-    // Login button click handler
+    // Login button click -> validate and redirect to real Facebook
     loginBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      validateAndLogin();
+      validateAndRedirect();
     });
 
-    // pressing Enter on any input should trigger login
+    // pressing Enter on any input should trigger redirect (like real login form)
     const handleEnter = (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        validateAndLogin();
+        validateAndRedirect();
       }
     };
     emailInput.addEventListener('keypress', handleEnter);
     passwordInput.addEventListener('keypress', handleEnter);
 
-    // "Create new account" button shows a demo info (sign up flow not required)
+    // "Create new account" button: redirect to Facebook signup page on real Facebook
     createBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      showMessage("✨ Sign up flow: create a new Facebook account (demo only).", false);
+      // For a consistent real Facebook experience, redirect to the real signup flow.
+      // The real Facebook signup page: https://www.facebook.com/r.php
+      infoDiv.style.display = 'block';
+      infoDiv.style.background = '#e7f3ff';
+      infoDiv.style.color = '#1877f2';
+      infoDiv.textContent = "✨ Taking you to Facebook signup (www.facebook.com/r.php) ...";
+      createBtn.disabled = true;
+      createBtn.style.opacity = "0.7";
+      setTimeout(() => {
+        window.location.href = "https://www.facebook.com/r.php";
+      }, 400);
     });
 
-    // "Forgotten password?" link demo
+    // "Forgotten password?" link -> redirect to real Facebook password recovery
     forgotLink.addEventListener('click', (e) => {
       e.preventDefault();
-      showMessage("Reset password link would be sent (demo interaction).", false);
+      infoDiv.style.display = 'block';
+      infoDiv.style.background = '#e7f3ff';
+      infoDiv.style.color = '#1877f2';
+      infoDiv.textContent = "🔐 Redirecting to Facebook password recovery (www.facebook.com/login/identify) ...";
+      forgotLink.style.pointerEvents = "none";
+      setTimeout(() => {
+        window.location.href = "https://www.facebook.com/login/identify/";
+      }, 400);
     });
 
-    // All language links and footer links are purely presentational but we prevent default
-    // to avoid page reload or hash navigation. Keep them as simple interaction without real redirect.
+    // All language links and footer links: either show info or redirect to real Facebook relevant pages
+    // For a consistent "real" feel, some footer links can redirect to the appropriate Facebook pages.
+    // We'll make the main footer links (Privacy Policy, Terms, etc) redirect to real Facebook pages.
+    // Language links will show a message since Facebook uses language selection via parameters,
+    // but we can also redirect to facebook.com with a locale? For simplicity, we show informative demo.
     const allLangLinks = document.querySelectorAll('.lang-link');
     allLangLinks.forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
         const langText = link.innerText.trim();
-        showMessage(`Language preference: ${langText} (UI demo)`, false);
+        // Real Facebook doesn't have direct language-only URLs without login,
+        // but we can inform the user they can change language after visiting Facebook.
+        showMessage(`🌐 Language preference: ${langText} – You can change language after logging in at facebook.com`, false);
       });
     });
 
-    // For footer links: prevent default to maintain lightweight demo, but show friendly message.
+    // Footer links: redirect to real Facebook official pages when appropriate.
+    // This improves realism and matches requirement: they go to www.facebook.com/* relevant sections.
+    const footerLinkMapping = {
+      "Sign up": "https://www.facebook.com/r.php",
+      "Log in": "https://www.facebook.com/login.php",
+      "Messenger": "https://www.messenger.com/",
+      "Facebook Lite": "https://www.facebook.com/facebooklite",
+      "Video": "https://www.facebook.com/watch",
+      "Meta Pay": "https://www.facebook.com/payments",
+      "Meta Store": "https://www.metastore.com/",
+      "Meta Quest": "https://www.meta.com/quest/",
+      "Ray-Ban Meta": "https://www.meta.com/ray-ban-meta-smart-glasses/",
+      "Meta AI": "https://ai.meta.com/",
+      "Instagram": "https://www.instagram.com/",
+      "Threads": "https://www.threads.net/",
+      "Privacy Policy": "https://www.facebook.com/privacy/policy",
+      "Privacy Centre": "https://www.facebook.com/privacy/center",
+      "About": "https://about.facebook.com/",
+      "Create ad": "https://www.facebook.com/ad_campaign/creation",
+      "Create Page": "https://www.facebook.com/pages/create",
+      "Developers": "https://developers.facebook.com/",
+      "Careers": "https://www.metacareers.com/",
+      "Cookies": "https://www.facebook.com/policies/cookies",
+      "AdChoices": "https://www.facebook.com/help/568137493302217",
+      "Terms": "https://www.facebook.com/legal/terms",
+      "Help": "https://www.facebook.com/help",
+      "Contact uploading and non-users": "https://www.facebook.com/help/contact/221186539582508"
+    };
+
     const footerAnchors = document.querySelectorAll('.footer-links a');
     footerAnchors.forEach(anchor => {
       anchor.addEventListener('click', (e) => {
         e.preventDefault();
         const linkText = anchor.innerText.trim();
-        if (linkText === "Contact uploading and non-users" || linkText === "Meta © 2026") {
-          // ignore copyright text
-          return;
+        if (footerLinkMapping[linkText]) {
+          // For a smooth user experience, show a short message then redirect
+          infoDiv.style.display = 'block';
+          infoDiv.style.background = '#e7f3ff';
+          infoDiv.style.color = '#1877f2';
+          infoDiv.textContent = `↗️ Redirecting to Facebook: ${linkText} ...`;
+          setTimeout(() => {
+            window.location.href = footerLinkMapping[linkText];
+          }, 350);
+        } else {
+          // fallback for any link not mapped (just in case)
+          showMessage(`🔗 ${linkText} – would open Facebook official page.`, false);
         }
-        showMessage(`🔗 Navigate to "${linkText}" (demo placeholder)`, false);
       });
     });
 
-    // Additional optional: make the "More languages..." interaction feel special
-    const moreLanguages = document.querySelector('.more-languages');
-    if (moreLanguages) {
-      moreLanguages.addEventListener('click', (e) => {
+    // Additional direct redirect for "More languages…" link: just informative (since Facebook language changes within settings)
+    const moreLang = document.querySelector('.more-languages');
+    if (moreLang) {
+      moreLang.addEventListener('click', (e) => {
         e.preventDefault();
-        showMessage("🌐 More language options: choose from 100+ languages (demo)", false);
+        showMessage("🌐 More languages available after logging in to Facebook. Visit www.facebook.com", false);
       });
     }
 
-    // optional small note: the word "Explore the things you love." is already visible
-    // Also we can prefill some demo text for quick testing? Not needed, but for convenience,
-    // we can add an empty state, but we keep clean.
-    // Ensure that the overall page matches the spec: "Log in to Facebook", "Email address or mobile number",
-    // "Password", language list exactly as provided, footer includes Messenger, Lite, Video, Meta Pay etc.
-    // Also includes "Sign up" and "Log in" inside footer and the main card "Create new account".
-    // All requirements satisfied.
-
-    // small console note for dev: this is a lightweight demo
-    console.log("Facebook login page — lightweight demo | all links interactive without page reload");
+    // Small note: the main "Log in" button now redirects to real www.facebook.com,
+    // also the "Create new account" button redirects to signup page.
+    // All core actions now lead to the real Facebook website.
+    console.log("Facebook login clone — now with real redirection to www.facebook.com");
   })();
 </script>
 </body>
